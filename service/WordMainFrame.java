@@ -6,6 +6,9 @@ import java.awt.GridLayout;
 import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -17,7 +20,7 @@ import dao_inf.DBdao;
 import dto.WordDTO;
 
 public class WordMainFrame extends JFrame 
-                           implements ActionListener{
+                           implements ActionListener, ItemListener{
 	private JPanel title_p = new JPanel();  //컴포넌트&컨테이너. 
 	// 기본 레이아웃이 flow 레이아웃.. 가운데부터하나씩 정렬
 	private JLabel t = new JLabel("단어장 프로그램" );
@@ -49,6 +52,8 @@ public class WordMainFrame extends JFrame
 	JLabel c7 = new JLabel("한글");
 	JTextField j5 = new JTextField();
 	JTextField j6 = new JTextField();
+	
+	ArrayList<WordDTO> w = null;
 	
 	public WordMainFrame(DBdao d){
 		this.dbdao=d;  // DB 작업을 위한 객체 주소를
@@ -88,8 +93,11 @@ public class WordMainFrame extends JFrame
 		c22.add(c22btn,"South");
 		center_2.setLayout(new BorderLayout());
 		center_2.add(c22,"Center");
+		c22list.addItemListener(this);			// 리스너 등록>이번트감지
+		c22btn.addActionListener(this);
 		
 		//center_3 작업
+		j5.setEnabled(false);
 		c5c.setBackground(Color.gray);
 		c5c.setLayout(new GridLayout(2, 2));
 		c5c.add(c6);
@@ -99,15 +107,24 @@ public class WordMainFrame extends JFrame
 		center_3.setLayout(new BorderLayout());
 		center_3.add(c5,"North");
 		center_3.add(c5btn,"South");
-		center_3.add(c5c,"Center");		
+		center_3.add(c5c,"Center");	
+		c5btn.addActionListener(this);
 		
 		this.setVisible(true);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
+		init();
+	}
+
+	private void init() {
+		w = dbdao.selectAll();
+		for(WordDTO t : w) {
+			c22list.add(t.getEng()+ " : " + t.getKor());
+		}
 	}
 
 	@Override     // 인터페이스를 구현 할 메서드
 	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
 		System.out.println("dddd");
 		if(e.getSource()==c1btn) {
 			String eng=j1.getText();
@@ -119,7 +136,30 @@ public class WordMainFrame extends JFrame
 			wdto.setEng(eng);
 			wdto.setKor(kor);
 			dbdao.add(wdto);
+		} else if(e.getSource() == c5btn) {
+			String eng = j5.getText();
+			String kor = j6.getText();
+			WordDTO wdto = new WordDTO();
+			wdto.setEng(eng);
+			wdto.setKor(kor);
+			dbdao.mod(wdto);
+			//  dao에게 넘겨서 수정합니다. 단, 영어 단어는 수정 불가로 합시다.
+		} else if(e.getSource() == c22btn) {
+			String eng = j5.getText();
+			WordDTO wdto = new WordDTO();
+			wdto.setEng(eng);
+			dbdao.delete(wdto);
+			//  dao에게 넘겨서 삭제합니다.
 		}
+	}
+
+	@Override
+	public void itemStateChanged(ItemEvent e) {
+		int no = c22list.getSelectedIndex();
+		// System.out.println(no + "변이 선택 됨");
+		WordDTO tempdto = w.get(no);
+		j5.setText(tempdto.getEng());
+		j6.setText(tempdto.getKor());
 	}
 
 }
